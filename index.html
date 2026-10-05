@@ -120,19 +120,26 @@
 </head>
 <body class="h-[100dvh] w-screen overflow-hidden flex flex-col relative select-none">
 
-    <!-- Top Nav / Icons -->
     <div id="top-nav" class="fixed top-0 w-full flex justify-between items-center p-6 z-50">
-        <button onclick="switchView('events')" class="nav-icon active:bg-zinc-800 transition">
+        <button onclick="switchView('events')" class="nav-icon active:bg-zinc-800 transition" title="Events & Stats">
             <i class="fas fa-file-alt"></i>
         </button>
-        <button onclick="switchView('settings')" class="nav-icon active:bg-zinc-800 transition">
-            <i class="fas fa-cog"></i>
-        </button>
+        <div class="flex gap-3">
+            <button onclick="switchView('history')" class="nav-icon active:bg-zinc-800 transition" title="Past Stats & Trips">
+                <i class="fas fa-history"></i>
+            </button>
+            <button onclick="switchView('settings')" class="nav-icon active:bg-zinc-800 transition" title="Settings">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- Global Floating Buttons: Undo centered at bottom -->
+    <!-- Global Floating Buttons: Undo centered at bottom, End Trip next to it if on main -->
     <button id="btn-undo" onclick="undoLastAction()" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-zinc-800 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.25)] flex justify-center items-center text-zinc-200 text-2xl z-50 hidden active:scale-95 transition border-2 border-zinc-500">
         <i class="fas fa-undo"></i>
+    </button>
+    <button id="btn-end-trip-main" onclick="promptEndTrip()" class="fixed bottom-6 right-6 w-14 h-14 bg-red-900/80 hover:bg-red-800 rounded-full shadow-lg flex justify-center items-center text-red-200 text-xl z-50 hidden active:scale-95 transition border border-red-700" title="End Current Trip">
+        <i class="fas fa-flag-checkered"></i>
     </button>
     <button id="btn-back-main" onclick="switchView('main')" class="fixed bottom-6 left-6 w-14 h-14 bg-zinc-800 rounded-full shadow-lg flex justify-center items-center text-zinc-300 text-xl z-50 hidden active:scale-95 transition border border-zinc-700">
         <i class="fas fa-arrow-left"></i>
@@ -178,56 +185,84 @@
     </div>
 
     <!-- VIEW: EVENTS / STATS WHEEL -->
-    <div id="view-events" class="view flex-col h-full items-center justify-center bg-black pt-20 overflow-y-auto">
-        <div class="w-full flex flex-wrap justify-center gap-x-8 gap-y-4 px-2 mb-8">
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-green font-semibold mb-1 text-sm">Snaps</span>
-                <span id="stat-snaps" class="text-stat-green text-4xl font-bold">0</span>
+    <div id="view-events" class="view flex-col h-full items-center justify-center bg-black pt-16 pb-12 overflow-y-auto">
+        <div class="w-full max-w-md flex flex-col items-center justify-center relative px-4">
+            
+            <!-- Top Stat (Snaps) & Button -->
+            <div class="flex flex-col items-center mb-2">
+                <span class="text-stat-green font-semibold text-xs mb-0.5">Snaps</span>
+                <span id="stat-snaps" class="text-stat-green text-3xl font-bold mb-2">0</span>
+                <button onclick="recordStat('snaps')" class="w-14 h-14 rounded-full bg-dot-green shadow-lg flex items-center justify-center text-white active:scale-95 transition">
+                    <i class="fas fa-camera text-lg"></i>
+                </button>
             </div>
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-orange font-semibold mb-1 text-sm">NFP</span>
-                <span id="stat-nfp" class="text-stat-orange text-4xl font-bold">0</span>
-            </div>
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-purple font-semibold mb-1 text-sm">Bonus</span>
-                <span id="stat-bonus" class="text-stat-purple text-4xl font-bold">0</span>
-            </div>
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-pink font-semibold mb-1 text-sm">Non-UK</span>
-                <span id="stat-nonUk" class="text-stat-pink text-4xl font-bold">0</span>
-            </div>
-        </div>
 
-        <div class="flex-none flex justify-center items-center w-full my-4 relative">
-            <div id="events-ring-container" class="ring-container flex items-center justify-center bg-black">
-                <!-- Dots injected via JS dynamically -->
+            <!-- Middle Row: Left (Old Car) & Right (New Car) -->
+            <div class="w-full flex justify-between items-center px-2 my-2">
+                <div class="flex flex-col items-center">
+                    <span class="text-stat-red font-semibold text-xs mb-0.5">Old Car</span>
+                    <span id="stat-oldCar" class="text-stat-red text-3xl font-bold mb-1">0</span>
+                    <button onclick="recordStat('oldCar')" class="w-14 h-14 rounded-full bg-dot-red shadow-lg flex items-center justify-center text-white active:scale-95 transition">
+                        <i class="fas fa-car text-lg"></i>
+                    </button>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-stat-teal font-semibold text-xs mb-0.5">New Car</span>
+                    <span id="stat-newCar" class="text-stat-teal text-3xl font-bold mb-1">0</span>
+                    <button onclick="recordStat('newCar')" class="w-14 h-14 rounded-full bg-dot-teal shadow-lg flex items-center justify-center text-white active:scale-95 transition">
+                        <i class="fas fa-car-side text-lg"></i>
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <div class="w-full flex flex-wrap justify-center gap-x-8 gap-y-4 mt-8 mb-20 px-2">
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-yellow font-semibold mb-1 text-xs">3 in a row</span>
-                <span id="stat-threeInRow" class="text-stat-yellow text-4xl font-bold">0</span>
+            <!-- Inner Hub showing automated / general totals -->
+            <div class="w-36 h-36 rounded-full bg-zinc-900 border-4 border-zinc-800 flex flex-col items-center justify-center my-2 shadow-inner">
+                <span class="text-xs text-zinc-400 font-bold uppercase tracking-wider">NFP / Bonus</span>
+                <div class="flex gap-3 mt-1">
+                    <div class="text-center">
+                        <span id="stat-nfp" class="text-stat-orange text-xl font-black">0</span>
+                    </div>
+                    <span class="text-zinc-600 font-bold">|</span>
+                    <div class="text-center">
+                        <span id="stat-bonus" class="text-stat-purple text-xl font-black">0</span>
+                    </div>
+                </div>
             </div>
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-blue font-semibold mb-1 text-xs">2 in a row</span>
-                <span id="stat-twoInRow" class="text-stat-blue text-4xl font-bold">0</span>
+
+            <!-- Lower-Middle Row: Left (2 in a row) & Right (3 in a row) -->
+            <div class="w-full flex justify-between items-center px-2 my-2">
+                <div class="flex flex-col items-center">
+                    <button onclick="recordStat('twoInRow')" class="w-14 h-14 rounded-full bg-dot-blue shadow-lg flex items-center justify-center text-white active:scale-95 transition mb-1">
+                        <i class="fas fa-equals text-lg"></i>
+                    </button>
+                    <span id="stat-twoInRow" class="text-stat-blue text-3xl font-bold mt-0.5">0</span>
+                    <span class="text-stat-blue font-semibold text-xs mt-0.5">2 in a row</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <button onclick="recordStat('threeInRow')" class="w-14 h-14 rounded-full bg-dot-yellow shadow-lg flex items-center justify-center text-white active:scale-95 transition mb-1">
+                        <i class="fas fa-layer-group text-lg"></i>
+                    </button>
+                    <span id="stat-threeInRow" class="text-stat-yellow text-3xl font-bold mt-0.5">0</span>
+                    <span class="text-stat-yellow font-semibold text-xs mt-0.5">3 in a row</span>
+                </div>
             </div>
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-red font-semibold mb-1 text-xs">Old Car</span>
-                <span id="stat-oldCar" class="text-stat-red text-4xl font-bold">0</span>
+
+            <!-- Bottom Stat (Non-UK Car) & Button -->
+            <div class="flex flex-col items-center mt-2">
+                <button onclick="recordStat('nonUk')" class="w-14 h-14 rounded-full bg-dot-pink shadow-lg flex items-center justify-center text-white active:scale-95 transition mb-1">
+                    <i class="fas fa-globe text-lg"></i>
+                </button>
+                <span id="stat-nonUk" class="text-stat-pink text-3xl font-bold mt-0.5">0</span>
+                <span class="text-stat-pink font-semibold text-xs mt-0.5">Non-UK Car</span>
             </div>
-            <div class="text-center flex flex-col items-center min-w-[70px]">
-                <span class="text-stat-teal font-semibold mb-1 text-xs">New Car</span>
-                <span id="stat-newCar" class="text-stat-teal text-4xl font-bold">0</span>
-            </div>
+
         </div>
     </div>
 
     <!-- VIEW: HISTORY STATS -->
     <div id="view-history" class="view flex-col h-full p-6 pt-24 overflow-y-auto w-full max-w-md mx-auto">
         <h2 class="text-3xl font-bold mb-4 text-center text-white">Historical Stats</h2>
-        <button onclick="switchView('past-trips')" class="mb-8 w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-4 rounded-xl border border-zinc-700 transition flex justify-center items-center gap-2">
+        <button onclick="switchView('past-trips')" class="mb-8 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-full shadow-lg transition flex justify-center items-center gap-2">
             <i class="fas fa-list"></i> View Past Trips
         </button>
         <div id="history-container" class="w-full flex flex-col gap-6 mb-20">
@@ -259,12 +294,24 @@
 
         <div class="bg-zinc-900 rounded-3xl p-6 mb-6 shadow-lg border border-zinc-800">
             <h3 class="text-xl font-bold mb-4 text-white">Trip Management</h3>
-            <button onclick="endTrip()" class="w-full bg-zinc-700 hover:bg-zinc-600 py-4 rounded-full font-bold text-lg transition shadow-lg text-white">End Current Trip</button>
+            <button onclick="promptEndTrip()" class="w-full bg-zinc-700 hover:bg-zinc-600 py-4 rounded-full font-bold text-lg transition shadow-lg text-white">End Current Trip</button>
         </div>
 
         <div class="bg-zinc-900 rounded-3xl p-6 border border-red-900/50 shadow-lg mb-20">
             <h3 class="text-xl font-bold text-red-500 mb-4">Danger Zone</h3>
             <button onclick="factoryReset()" class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-full font-bold text-lg transition shadow-lg text-white">Reset All Data</button>
+        </div>
+    </div>
+
+    <!-- Custom Popup Modal for 3-in-a-row Bonus -->
+    <div id="bonus-modal" class="fixed inset-0 bg-black/80 z-[2000] hidden items-center justify-center p-6">
+        <div class="bg-zinc-900 border border-zinc-700 rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4 text-center">
+            <h3 class="text-2xl font-bold text-white">3 in a Row!</h3>
+            <p class="text-zinc-300 text-sm">Did this 3 in a row include any player's number?</p>
+            <div id="bonus-modal-buttons" class="flex flex-col gap-3 mt-2">
+                <!-- Dynamically filled with player buttons or skip -->
+            </div>
+            <button onclick="closeBonusModal()" class="mt-2 text-zinc-500 hover:text-white text-sm font-semibold">Cancel / No Player</button>
         </div>
     </div>
 
@@ -296,6 +343,7 @@
             views: document.querySelectorAll('.view'),
             nav: document.getElementById('top-nav'),
             btnUndo: document.getElementById('btn-undo'),
+            btnEndTripMain: document.getElementById('btn-end-trip-main'),
             btnBackMain: document.getElementById('btn-back-main'),
             toast: document.getElementById('toast'),
             btnRoll: document.getElementById('btn-roll'),
@@ -304,7 +352,6 @@
             setupTripName: document.getElementById('setup-trip-name'),
             mainScoresContainer: document.getElementById('main-scores-container'),
             mainRingContainer: document.getElementById('main-ring-container'),
-            eventsRingContainer: document.getElementById('events-ring-container'),
             statElements: {
                 snaps: document.getElementById('stat-snaps'),
                 nfp: document.getElementById('stat-nfp'),
@@ -317,13 +364,14 @@
             },
             settingsNumbers: document.getElementById('settings-numbers'),
             historyContainer: document.getElementById('history-container'),
-            pastTripsContainer: document.getElementById('past-trips-container')
+            pastTripsContainer: document.getElementById('past-trips-container'),
+            bonusModal: document.getElementById('bonus-modal'),
+            bonusModalButtons: document.getElementById('bonus-modal-buttons')
         };
 
         function init() {
             loadState();
             checkDailyReset();
-            renderEventsRing();
             
             if (state.currentTrip) {
                 renderMainView();
@@ -336,7 +384,7 @@
         }
 
         function loadState() {
-            const saved = localStorage.getItem('carGameData_v5');
+            const saved = localStorage.getItem('carGameData_v7');
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -346,7 +394,7 @@
         }
 
         function saveState() {
-            localStorage.setItem('carGameData_v5', JSON.stringify(state));
+            localStorage.setItem('carGameData_v7', JSON.stringify(state));
         }
 
         function showToast(msg) {
@@ -420,6 +468,7 @@
             if (viewId === 'main') {
                 el.nav.style.display = 'flex';
                 el.btnBackMain.classList.add('hidden');
+                el.btnEndTripMain.classList.remove('hidden');
                 
                 if (state.currentTrip && state.currentTrip.actionStack.length > 0) {
                     el.btnUndo.classList.remove('hidden');
@@ -429,11 +478,12 @@
             } else if (viewId === 'setup') {
                 el.nav.style.display = 'none';
                 el.btnUndo.classList.add('hidden');
+                el.btnEndTripMain.classList.add('hidden');
                 el.btnBackMain.classList.add('hidden');
                 renderSetupView();
             } else {
                 el.nav.style.display = 'flex';
-                el.btnUndo.classList.add('hidden');
+                el.btnEndTripMain.classList.add('hidden');
                 el.btnBackMain.classList.remove('hidden'); 
                 
                 if (viewId === 'settings') {
@@ -441,7 +491,6 @@
                     loadSettingsUI();
                 }
                 if (viewId === 'history') {
-                    el.nav.style.display = 'none';
                     loadHistoryUI();
                 }
                 if (viewId === 'events') {
@@ -453,39 +502,6 @@
                     renderPastTrips();
                 }
             }
-        }
-
-        function renderEventsRing() {
-            const ring = el.eventsRingContainer;
-            if(!ring) return;
-            ring.innerHTML = '';
-            
-            const events = [
-                { id: 'nfpBtn', color: '#f97316' }, 
-                { id: 'bonus', color: '#a855f7' }, 
-                { id: 'oldCar', color: '#ef4444' }, 
-                { id: 'newCar', color: '#14b8a6' }, 
-                { id: 'twoInRow', color: '#0ea5e9' }, 
-                { id: 'threeInRow', color: '#eab308' }, 
-                { id: 'snaps', color: '#22c55e' }, 
-                { id: 'nonUk', color: '#ec4899' } 
-            ];
-
-            const radius = 135;
-            events.forEach((ev, index) => {
-                const angle = -Math.PI / 2 + (index * (2 * Math.PI) / 8);
-                const x = Math.cos(angle) * radius; 
-                const y = Math.sin(angle) * radius; 
-
-                const btn = document.createElement('div');
-                btn.className = `ring-dot flex justify-center items-center`;
-                btn.style.backgroundColor = ev.color;
-                btn.style.left = `calc(50% + ${x}px - 35px)`;
-                btn.style.top = `calc(50% + ${y}px - 35px)`;
-                btn.onclick = () => recordStat(ev.id);
-                
-                ring.appendChild(btn);
-            });
         }
 
         function getRandomNumber(pool) {
@@ -651,30 +667,73 @@
         function recordStat(statKey) {
             if (!state.currentTrip) return;
             
-            if (statKey === 'nfpBtn') {
-                state.currentTrip.stats.nfp++;
-                state.currentTrip.actionStack.push({ type: 'STAT', stat: 'nfp' });
-                showToast(`Added NFP`);
-                triggerPopAnimation('stat-nfp');
-            } else {
-                state.currentTrip.stats[statKey]++;
-                state.currentTrip.actionStack.push({ type: 'STAT', stat: statKey });
-                
-                let name = statKey;
-                if(statKey === 'threeInRow') name = '3 in a row';
-                if(statKey === 'twoInRow') name = '2 in a row';
-                if(statKey === 'oldCar') name = 'Old Car';
-                if(statKey === 'newCar') name = 'New Car';
-                if(statKey === 'nonUk') name = 'Non-UK';
-                
-                showToast(`Added ${name}`);
-                if (el.statElements[statKey]) {
-                    triggerPopAnimation(`stat-${statKey}`);
-                }
+            if (statKey === 'threeInRow') {
+                openBonusModal();
+                return;
+            }
+
+            state.currentTrip.stats[statKey]++;
+            state.currentTrip.actionStack.push({ type: 'STAT', stat: statKey });
+            
+            let name = statKey;
+            if(statKey === 'twoInRow') name = '2 in a row';
+            if(statKey === 'oldCar') name = 'Old Car';
+            if(statKey === 'newCar') name = 'New Car';
+            if(statKey === 'nonUk') name = 'Non-UK';
+            
+            showToast(`Added ${name}`);
+            if (el.statElements[statKey]) {
+                triggerPopAnimation(`stat-${statKey}`);
             }
             
             saveState();
             updateUI();
+        }
+
+        function openBonusModal() {
+            el.bonusModalButtons.innerHTML = '';
+            
+            state.players.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full py-3 rounded-full font-bold text-lg text-white shadow transition active:scale-95';
+                btn.style.backgroundColor = p.color;
+                btn.textContent = `${p.name}'s Number Included`;
+                btn.onclick = () => {
+                    state.currentTrip.stats.threeInRow++;
+                    state.currentTrip.stats.bonus++;
+                    state.currentTrip.playerStats[p.id].score++;
+                    state.currentTrip.stats.nfp++; 
+                    
+                    state.currentTrip.actionStack.push({ type: 'THREE_IN_ROW_BONUS', player: p.id });
+                    
+                    saveState();
+                    updateUI();
+                    closeBonusModal();
+                    showToast(`3-in-row + Bonus point for ${p.name}!`);
+                    triggerPopAnimation(`main-score-${p.id}`);
+                };
+                el.bonusModalButtons.appendChild(btn);
+            });
+
+            const noPlayerBtn = document.createElement('button');
+            noPlayerBtn.className = 'w-full py-3 rounded-full font-bold text-sm bg-zinc-800 text-zinc-300 hover:text-white transition active:scale-95 border border-zinc-700 mt-1';
+            noPlayerBtn.textContent = 'No Player Number (Just 3 in a row)';
+            noPlayerBtn.onclick = () => {
+                state.currentTrip.stats.threeInRow++;
+                state.currentTrip.actionStack.push({ type: 'STAT', stat: 'threeInRow' });
+                saveState();
+                updateUI();
+                closeBonusModal();
+                showToast('Added 3 in a row');
+                triggerPopAnimation('stat-threeInRow');
+            };
+            el.bonusModalButtons.appendChild(noPlayerBtn);
+
+            el.bonusModal.style.display = 'flex';
+        }
+
+        function closeBonusModal() {
+            el.bonusModal.style.display = 'none';
         }
 
         function undoLastAction() {
@@ -694,6 +753,18 @@
                 updateUI();
                 triggerPopAnimation(`main-score-${pid}`);
             } 
+            else if (lastAction.type === 'THREE_IN_ROW_BONUS') {
+                const pid = lastAction.player;
+                if (state.currentTrip.playerStats[pid] && state.currentTrip.playerStats[pid].score > 0) {
+                    state.currentTrip.playerStats[pid].score--;
+                }
+                if (state.currentTrip.stats.threeInRow > 0) state.currentTrip.stats.threeInRow--;
+                if (state.currentTrip.stats.bonus > 0) state.currentTrip.stats.bonus--;
+                if (state.currentTrip.stats.nfp > 0) state.currentTrip.stats.nfp--;
+                showToast("Undid 3-in-row Bonus");
+                updateUI();
+                triggerPopAnimation(`main-score-${pid}`);
+            }
             else if (lastAction.type === 'STAT') {
                 if (state.currentTrip.stats[lastAction.stat] > 0) {
                     state.currentTrip.stats[lastAction.stat]--;
@@ -757,7 +828,7 @@
             showToast("Numbers updated!");
         }
 
-        function endTrip() {
+        function promptEndTrip() {
             if (state.currentTrip) {
                 if(confirm("Are you sure you want to end this trip and save stats?")) {
                     state.currentTrip.actionStack = []; 
@@ -777,7 +848,7 @@
 
         function factoryReset() {
             if (confirm("Are you sure? This deletes ALL stats and trips permanently!")) {
-                localStorage.removeItem('carGameData_v5');
+                localStorage.removeItem('carGameData_v7');
                 location.reload();
             }
         }
@@ -875,7 +946,7 @@
 
         function renderPastTrips() {
             if (!state.history || state.history.length === 0) {
-                el.pastTripsContainer.innerHTML = `<p class="text-zinc-500 text-center mt-10">No past trips yet.</p>`;
+                el.pastTripsContainer.innerHTML = `<p class="text-zinc-500 text-center mt-10">No past trips yet. Complete a trip to see it here!</p>`;
                 return;
             }
 
